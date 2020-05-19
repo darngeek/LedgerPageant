@@ -1,0 +1,191 @@
+// Microsoft Visual C++ generated resource script.
+//
+#include "resource.h"
+
+#define APSTUDIO_READONLY_SYMBOLS
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 2 resource.
+//
+#include "winres.h"
+
+/////////////////////////////////////////////////////////////////////////////
+#undef APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+// English (United States) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
+#pragma code_page(1252)
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE 
+BEGIN
+    "resource.h\0"
+END
+
+2 TEXTINCLUDE 
+BEGIN
+    "#include ""winres.h""\r\n"
+    "\0"
+END
+
+3 TEXTINCLUDE 
+BEGIN
+    "\r\n"
+    "\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Icon
+//
+
+// Icon with lowest ID value placed first to ensure application icon
+// remains consistent on all systems.
+IDI_NOTIFICATIONICON    ICON                    "ledger.ico"
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Menu
+//
+
+IDC_NOTIFY_MENU MENU
+BEGIN
+    POPUP ""
+    BEGIN
+        MENUITEM "Manage Identities",           IDM_MNGIDENT
+        MENUITEM "E&xit",                       IDM_EXIT
+    END
+END
+
+IDC_LSTIDENT_MENU MENU
+BEGIN
+    POPUP ""
+    BEGIN
+        MENUITEM "Get &Public Key",             ID__GETPUBLICKEY
+        MENUITEM "Copy Key to Clipboard",       ID__COPYKEYTOCLIPBOARD
+        MENUITEM "Clear Public Key",            ID__CLEARPUBLICKEY
+        MENUITEM SEPARATOR
+        MENUITEM "&Remove",                     ID__REMOVE
+    END
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_MNGIDENT DIALOGEX 0, 0, 373, 267
+STYLE DS_SETFONT | DS_FIXEDSYS | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME
+EXSTYLE WS_EX_WINDOWEDGE
+FONT 8, "MS Shell Dlg", 400, 0, 0x3
+BEGIN
+    LTEXT           "Identities",IDC_LBL_IDENTITIES,6,6,31,8
+    CONTROL         "",IDC_LST_IDENTITIES,"SysListView32",LVS_REPORT | LVS_SINGLESEL | LVS_ALIGNLEFT | WS_BORDER | WS_TABSTOP,6,18,168,222
+    PUSHBUTTON      "A&dd...",IDC_BTN_ADD,6,246,50,14
+    PUSHBUTTON      "Get Key",IDC_BTN_GETKEY,66,246,50,14
+    PUSHBUTTON      "&Remove",IDC_BTN_REMOVE,126,246,50,14
+    GROUPBOX        "Identity",IDC_GRP_IDENTITY,180,18,188,180
+    LTEXT           "Display name:",IDC_LBL_DISPLAYNAME,186,30,54,8
+    EDITTEXT        IDC_TXT_DISPLAYNAME,186,42,174,14,ES_AUTOHSCROLL
+    LTEXT           "Protocol",IDC_LBL_PROTOCOL,186,78,59,8
+    EDITTEXT        IDC_TXT_PROTOCOL,186,90,90,14,ES_AUTOHSCROLL | ES_READONLY
+    LTEXT           "Host name:",IDC_LBL_HOSTNAME,186,110,38,8
+    EDITTEXT        IDC_TXT_HOSTNAME,186,121,126,14,ES_AUTOHSCROLL
+    LTEXT           "Port:",IDC_LBL_PORT,318,108,17,8
+    EDITTEXT        IDC_TXT_PORT,318,121,42,14,ES_AUTOHSCROLL | ES_NUMBER
+    LTEXT           "User name:",IDC_LBL_USERNAME,186,142,38,8
+    EDITTEXT        IDC_TXT_USERNAME,186,153,174,14,ES_AUTOHSCROLL
+    PUSHBUTTON      "Save",IDC_BTN_SAVE,306,174,50,14
+    PUSHBUTTON      "Close",IDC_BTN_CLOSE,320,248,48,14
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO
+BEGIN
+    IDD_MNGIDENT, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 366
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 260
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// AFX_DIALOG_LAYOUT
+//
+
+IDD_MNGIDENT AFX_DIALOG_LAYOUT
+BEGIN
+    0,
+    0, 0, 100, 100,
+    0, 0, 0, 0,
+    0, 0, 0, 0,
+    0, 0, 0, 0,
+    0, 0, 0, 0,
+    0, 0, 0, 0,
+    0, 0, 0, 0,
+    0, 0, 0, 0,
+    0, 0, 0, 0,
+    0, 0, 0, 0,
+    0, 0, 0, 0,
+    0, 0, 0, 0,
+    0, 0, 0, 0,
+    0, 0, 0, 0,
+    0, 0, 0, 0,
+    0, 0, 0, 0,
+    0, 0, 0, 0,
+    0, 0, 0, 0
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// String Table
+//
+
+STRINGTABLE
+BEGIN
+    IDS_APP_TITLE           "Pageant"
+    IDS_MNGIDENT_TITLE      "Manage Identities"
+	IDS_LST_COL_NAME		"Name"
+	IDS_LST_COL_PUBKEY		"Public Key"
+END
+
+#endif    // English (United States) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+
+#ifndef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 3 resource.
+//
+
+
+/////////////////////////////////////////////////////////////////////////////
+#endif    // not APSTUDIO_INVOKED
+
