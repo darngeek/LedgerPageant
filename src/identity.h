@@ -5,7 +5,6 @@
 #include "bytearray.h"
 #include <tchar.h>
 
-// CryptoPP:
 #include <cryptopp\cryptlib.h>
 #include <cryptopp\sha.h>
 #include <cryptopp\hex.h>
@@ -14,25 +13,26 @@
 
 class Identity {
 public:
-    Identity();
-    Identity(std::string identStr);
-    ~Identity();
+	Identity();
+	explicit Identity(const std::string& identStr);
+	~Identity();
 
-    bool fromUrl(std::string identStr);
-    const std::string toUrl();
+	bool FromString(std::string identStr);
+	std::string ToString() const;
 
-    byte_array getBip32Path();
+	ByteArray GetPathBIP32() const;
 
-    byte_array get_address(bool ecdh);
+	// private:
+	std::wstring name;
+	std::wstring protocol;
+	std::wstring user;
+	std::wstring host;
+	std::wstring path;
+	int port;
 
-// private:
-    std::wstring name;
-    std::wstring protocol;
-    std::wstring user;
-    std::wstring host;
-    std::wstring path;
-    int port;
+	TCHAR regKeyName[255] = {0};
+	ByteArray pubkey_cached;
 
-    TCHAR regKeyName[255];
-    byte_array pubkey_cached;
+private:
+	ByteArray GetAddress(bool ecdh) const;
 };

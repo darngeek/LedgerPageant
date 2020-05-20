@@ -5,24 +5,21 @@
 
 constexpr size_t packet_size = 64;
 
-class ledger_device {
+class Device {
 public:
-    ledger_device();
-    ~ledger_device();
+	Device();
+	~Device();
 
-    bool updateIsDevicePresent();
-    bool isDeviceReady() const;
-    bool isDeviceAppReady() const;
+	bool Open();
+	void Close();
 
-    size_t read(byte_array& outBuffer);
-    size_t write(const byte_array& inBuffer);
-    
-    uint32_t read_timeout(byte_array& outBuffer, uint32_t timeout);
+	size_t Read(ByteArray& outBuffer);
+	uint32_t Read(ByteArray& outBuffer, uint32_t timeout);
 
+	int Write(const ByteArray& inBuffer);
+	
 private:
-    bool mDeviceReady = false;
-    bool mDeviceAppReady = false;
-    hid_device* m_dev = nullptr;
-    hid_device_info* dev_info = nullptr;
-    byte_array m_buffer; // TODO: used as buffer for last read value, then copying a bunch of times
+	bool mDeviceAppReady = false;
+	hid_device* mDevice = nullptr;
+	ByteArray mReadBuffer;
 };

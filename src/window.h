@@ -11,9 +11,11 @@ public:
 	static Window* GetPtr();
 	static void DeletePtr();
 
-	Application* getApp() { return &mApp; }
+	Application* GetApplication() {
+		return &mApp;
+	}
 
-    HWND make(HINSTANCE instance);
+	HWND Make(HINSTANCE instance);
 
 private:
 	Window();

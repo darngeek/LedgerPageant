@@ -1,5 +1,7 @@
 # LedgerPageant
 
+Windows Pageant replacement SSH Agent utilizing the Ledger Nano S
+
 Base on Python ssh-agent:
 https://github.com/Falsen/ledger-app-ssh-agent/
 Which is compatible with the third party SSH/PGP host client from Roman Zeyde available at https://github.com/romanz/trezor-agent
@@ -11,7 +13,6 @@ Improved on the Win32 UI to manage identities, and load/save these from Putty.
 Public keys are only kept in memory, not saved.
 
 # Usage
-
 Please use at your own risk!
 
 1) Make sure Putty's Pageant is not running.
@@ -26,9 +27,8 @@ Please use at your own risk!
 10) If public key was present on host, the username was correct, and you accepted the request this should work!
 
 # Third-party dependencies
-LedgerPageant uses Crypto++ to decompress the ECDSA key
+LedgerPageant uses Crypto++ to decompress the ECDSA key and human readable base64 encoded pubkey
 https://github.com/weidai11/cryptopp
 HIDAPI to interact with the Ledger Nano S over usb.
 https://github.com/libusb/hidapi/
-And also includes Base64 encoding/decoding to make human readable public keys
-https://github.com/ReneNyffenegger/cpp-base64
+

@@ -1,37 +1,38 @@
 #pragma once
 
 #include <stdint.h>
+#include <string>
 #include <vector>
 #include <algorithm>	// swap
 
-class byte_array {
+class ByteArray {
 public:
-	byte_array() {
+	ByteArray() {
 
 	}
 
-	explicit byte_array(size_t size)
+	explicit ByteArray(size_t size)
 		: mData(size) {
 	}
 
-	~byte_array() {
+	~ByteArray() {
 
 	}
 
-	uint32_t push_back(uint8_t _byte) {
+	uint32_t PushBack(uint8_t _byte) {
 		mData.push_back(_byte);
 
 		return 1;
 	}
 
-	uint32_t push_back(uint16_t _short) {
+	uint32_t PushBack(uint16_t _short) {
 		mData.push_back((uint8_t)(_short >> 8u));
 		mData.push_back((uint8_t)(_short));
 
 		return 2;
 	}
 
-	uint32_t push_back(uint32_t _int) {
+	uint32_t PushBack(uint32_t _int) {
 		mData.push_back((uint8_t)(_int >> 24u));
 		mData.push_back((uint8_t)(_int >> 16u));
 		mData.push_back((uint8_t)(_int >> 8u));
@@ -40,7 +41,7 @@ public:
 		return 4;
 	}
 
-	uint32_t push_back(uint64_t _long) {
+	uint32_t PushBack(uint64_t _long) {
 		mData.push_back((uint8_t)(_long >> 56u));
 		mData.push_back((uint8_t)(_long >> 48u));
 		mData.push_back((uint8_t)(_long >> 40u));
@@ -53,33 +54,37 @@ public:
 		return 8;
 	}
 
-	uint32_t push_back(uint8_t* bytes, uint32_t bytesSize) {
+	uint32_t PushBack(uint8_t* bytes, uint32_t bytesSize) {
 		const uint32_t oldEnd = mData.size();
-		mData.resize(oldEnd+bytesSize);
+		mData.resize(oldEnd + bytesSize);
 		memcpy(&(mData.data()[oldEnd]), bytes, bytesSize);
 		return bytesSize;
 	}
 
-	uint32_t push_back(byte_array bytes) {
+	uint32_t PushBack(const ByteArray& bytes) {
 		const uint32_t oldEnd = mData.size();
-		mData.resize(oldEnd + bytes.size());
-		memcpy(&(mData.data()[oldEnd]), bytes.get().data(), bytes.size());
-		return bytes.size();
+		mData.resize(oldEnd + bytes.Size());
+		memcpy(&(mData.data()[oldEnd]), bytes.Get().data(), bytes.Size());
+		return bytes.Size();
 	}
 
-	size_t size() const {
+	size_t Size() const {
 		return mData.size();
 	}
 
-	bool empty() const {
+	bool Empty() const {
 		return mData.empty();
 	}
 
-	void clear() {
+	void Clear() {
 		mData.clear();
 	}
 
-	std::vector<uint8_t> get() const {
+	const std::vector<uint8_t>& Get() const {
+		return mData;
+	}
+
+	std::vector<uint8_t>& Get() {
 		return mData;
 	}
 
@@ -87,7 +92,7 @@ public:
 		return mData.at(index);
 	}
 
-	byte_array& operator= (byte_array other) {
+	ByteArray& operator= (ByteArray other) {
 		if (*this == other) {
 			return *this;
 		}
@@ -97,21 +102,7 @@ public:
 		return *this;
 	}
 
-	std::vector<uint8_t>::const_iterator begin() const {
-		return mData.begin();
-	}
-	std::vector<uint8_t>::const_iterator end() const {
-		return mData.end();
-	}
-
-	std::vector<uint8_t>::iterator begin() {
-		return mData.begin();
-	}
-	std::vector<uint8_t>::iterator end() {
-		return mData.end();
-	}
-
-	bool operator== (const byte_array& other) const {
+	bool operator== (const ByteArray& other) const {
 		if (mData.size() != other.mData.size()) {
 			return false;
 		}
@@ -119,7 +110,7 @@ public:
 		return mData == other.mData;
 	}
 
-	bool operator!= (const byte_array& other) {
+	bool operator!= (const ByteArray& other) {
 		if (mData.size() != other.mData.size()) {
 			return true;
 		}
@@ -127,43 +118,37 @@ public:
 		return mData != other.mData;
 	}
 
-	uint8_t asByte(size_t index = 0) const {
+	uint8_t AsByte(size_t index = 0) const {
 		return mData[index];
 	}
+	
+	std::string AsString() const {
+		std::string str(mData.begin(), mData.end());
 
-	uint16_t asShort(size_t index = 0) const {
-		return	static_cast<uint16_t>(mData[index+0]) << 8u | 
-				static_cast<uint16_t>(mData[index+1]);
+		return str;
 	}
 
-	uint32_t asInt(size_t index = 0) const {
-		return	static_cast<uint32_t>(mData[index+0]) << 24u |
-				static_cast<uint32_t>(mData[index+1]) << 16u |
-				static_cast<uint32_t>(mData[index+2]) << 8u |
-				static_cast<uint32_t>(mData[index+3]);
+	uint16_t AsShort(size_t index = 0) const {
+		return	static_cast<uint16_t>(mData[index + 0]) << 8u |
+			static_cast<uint16_t>(mData[index + 1]);
 	}
 
-	uint64_t asLong(size_t index = 0) const {
-		return	static_cast<uint64_t>(mData[index+0]) << 56u | 
-				static_cast<uint64_t>(mData[index+1]) << 48u |
-				static_cast<uint64_t>(mData[index+2]) << 40u | 
-				static_cast<uint64_t>(mData[index+3]) << 32u |
-				static_cast<uint64_t>(mData[index+4]) << 24u | 
-				static_cast<uint64_t>(mData[index+5]) << 16u |
-				static_cast<uint64_t>(mData[index+6]) << 8u | 
-				static_cast<uint64_t>(mData[index+7]);
+	uint32_t AsInt(size_t index = 0) const {
+		return	static_cast<uint32_t>(mData[index + 0]) << 24u |
+			static_cast<uint32_t>(mData[index + 1]) << 16u |
+			static_cast<uint32_t>(mData[index + 2]) << 8u |
+			static_cast<uint32_t>(mData[index + 3]);
 	}
 
-	bool as_hex(char* outBuffer) {
-		char* data = (char*)mData.data();
-		size_t size = mData.size();
-
-		outBuffer = (char*)malloc(size * 3);
-		uint32_t buffIdx = 0;
-		for (uint32_t i = 0; i < size; ++i) {
-			sprintf_s(outBuffer + buffIdx, 4, "%02X ", data[i]);
-			buffIdx++;
-		}
+	uint64_t AsLong(size_t index = 0) const {
+		return	static_cast<uint64_t>(mData[index + 0]) << 56u |
+			static_cast<uint64_t>(mData[index + 1]) << 48u |
+			static_cast<uint64_t>(mData[index + 2]) << 40u |
+			static_cast<uint64_t>(mData[index + 3]) << 32u |
+			static_cast<uint64_t>(mData[index + 4]) << 24u |
+			static_cast<uint64_t>(mData[index + 5]) << 16u |
+			static_cast<uint64_t>(mData[index + 6]) << 8u |
+			static_cast<uint64_t>(mData[index + 7]);
 	}
 
 private:

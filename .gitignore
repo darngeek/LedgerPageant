@@ -37,3 +37,5 @@
 *.vcxproj.filters
 *.vcxproj.user
 /bin/*
+/Debug/*
+/Release/*

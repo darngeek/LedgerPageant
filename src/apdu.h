@@ -7,40 +7,39 @@ constexpr uint8_t APDU_TAG = 0x05;
 
 class APDU {
 public:
-    APDU(uint8_t _cla, uint8_t _ins, uint8_t _p1, uint8_t _p2, byte_array _data) 
-        : cla (_cla)
-        , ins (_ins)
-        , p1 (_p1)
-        , p2 (_p2)
-        , payload_size((uint8_t)_data.size() & 0xFF)
-    {
-        memcpy(payload, _data.get().data(), _data.size());
-    }
+	APDU(uint8_t cla, uint8_t ins, uint8_t p1, uint8_t p2, const ByteArray& data)
+		: mInstructionClass(cla)
+		, mInstruction(ins)
+		, mParameter1(p1)
+		, mParameter2(p2)
+		, mPayloadSize((uint8_t)data.Size() & 0xFF) {
+		memcpy(mPayload, data.Get().data(), data.Size());
+	}
 
-    ~APDU() {
+	~APDU() {
 
-    }
+	}
 
-    byte_array to_bytes() const {
-        byte_array out;
-        out.push_back(cla);
-        out.push_back(ins);
-        out.push_back(p1);
-        out.push_back(p2);
-        out.push_back(payload_size);
+	ByteArray AsBytes() const {
+		ByteArray out;
+		out.PushBack(mInstructionClass);
+		out.PushBack(mInstruction);
+		out.PushBack(mParameter1);
+		out.PushBack(mParameter2);
+		out.PushBack(mPayloadSize);
 
-        if (payload_size > 0) {
-            out.push_back((uint8_t*)payload, payload_size);
-        }
+		if (mPayloadSize > 0) {
+			out.PushBack((uint8_t*)mPayload, mPayloadSize);
+		}
 
-        return out;
-    }
+		return out;
+	}
 
 private:
-    uint8_t cla = 0;
-    uint8_t ins = 0;
-    uint8_t p1 = 0;
-    uint8_t p2 = 0;
-    uint8_t payload_size = 0;
-    uint8_t payload[0xFF];
+	uint8_t mInstructionClass = 0x00;
+	uint8_t mInstruction = 0x00;
+	uint8_t mParameter1 = 0x00;
+	uint8_t mParameter2 = 0x00;
+	uint8_t mPayloadSize = 0;
+	uint8_t mPayload[0xFF];
 };
