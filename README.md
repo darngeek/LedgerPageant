@@ -30,9 +30,14 @@ Please use at your own risk!
 ![Screenshot](/screenshots/sign_request.png) <br/>
 10) If public key was present on host, the username was correct, and you accepted the request this should work!<br/>
 
+It is possible to reuse public keys as he Keys that are loaded in the UI will be presented to putty.
+Putty only cares about keys, the <user@host> is only used to generate the public key.
+
 # Third-party dependencies
 LedgerPageant uses Crypto++ to decompress the ECDSA key and human readable base64 encoded pubkey<br/>
 https://github.com/weidai11/cryptopp  
 HIDAPI to interact with the Ledger Nano S over usb.<br/>
 https://github.com/libusb/hidapi/  
 
+# License
+MIT. See [LICENSE](./LICENSE.md)
