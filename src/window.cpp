@@ -290,7 +290,7 @@ bool SaveIdentity(HWND windowHandle, int index, bool changed) {
 	}
 
 	Application* app = Window::GetPtr()->GetApplication();
-	Identity ident = Window::GetPtr()->GetApplication()->GetIdentityByIndex(index);
+	Identity& ident = Window::GetPtr()->GetApplication()->GetIdentityByIndex(index);
 
 	ident.protocol = readDialogItemWStr(windowHandle, IDC_TXT_PROTOCOL);
 	ident.name = readDialogItemWStr(windowHandle, IDC_TXT_DISPLAYNAME);
@@ -518,6 +518,7 @@ BOOL CALLBACK ManageIdentProc(HWND hwnd, UINT Message, WPARAM wParam,
 		{
 			Identity& ident = GetSelectedIdentity(m_hListBox);
 			ident.pubkey_cached = ByteArray();
+			RefreshIdentityList(m_hListBox, 0);
 		} break;
 		}
 	} break;
