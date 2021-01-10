@@ -3,6 +3,7 @@
 #include <vector>
 #include "apdu.h"
 #include "identity.h"
+#include "key_type.h"
 #include "memoryMap.h"
 #include "ledger_device.h"
 #include "registryInterface.h"
@@ -11,6 +12,8 @@ class Application {
 public:
 	Application();
 	~Application();
+
+	void Init();
 
 	// Device
 	bool TryOpenDevice();
@@ -28,7 +31,12 @@ public:
 	bool SaveIdentity(Identity& identity);
 
 	// Public Key
+	void InitKeyTypes();
+	size_t GetNumKeyTypes();
+	KeyType GetKeyTypeByIndex(size_t index);
+	size_t GetKeyTypeIndexByName(const std::string& name);
 	uint32_t GetNumLoadedKeys();
+	ByteArray ConvertPubKey(const std::string& CurveName, ByteArray& response);
 	ByteArray GetPubKeyFor(const Identity& identity);
 	std::string GetPubKeyStrFor(const ByteArray& keyBlob, const Identity& identity);
 
@@ -45,4 +53,5 @@ private:
 
 	std::vector<MemoryMap> mMemoryMaps;
 	std::vector<Identity> mIdentities;
+	std::vector<KeyType> mKeyTypes;
 };

@@ -1,12 +1,12 @@
 #include "memoryMap.h"
-
+#include "stringUtil.h"
 
 MemoryMap::MemoryMap(const std::string& inName)
 	: mName(inName) {
 }
 
 bool MemoryMap::Open() {
-	std::wstring stemp = std::wstring(mName.begin(), mName.end());
+	std::wstring stemp = stringUtil::s2ws(mName);
 	mFilemapHandle = CreateFileMapping(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, 0, mLength, stemp.c_str());
 
 	if (mFilemapHandle == INVALID_HANDLE_VALUE) {

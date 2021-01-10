@@ -11,6 +11,8 @@ public:
 	static Window* GetPtr();
 	static void DeletePtr();
 
+	void Init();
+
 	Application* GetApplication() {
 		return &mApp;
 	}

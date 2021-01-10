@@ -11,6 +11,7 @@
 
 #include "logger.h"
 #include "memoryMap.h"
+#include "stringUtil.h"
 #include "resource.h"
 
 #define WMAPP_NOTIFYCALLBACK (WM_APP + 1)
@@ -25,6 +26,10 @@ Window::Window() {
 }
 
 Window::~Window() {
+}
+
+void Window::Init() {
+	mApp.Init();
 }
 
 BOOL AddNotificationIcon(HWND hwnd) {
@@ -107,6 +112,16 @@ int readDialogItemNumber(HWND hwnd, DWORD item) {
 	return retVar;
 }
 
+int readDialogComboIndex(HWND hwnd, DWORD item) {
+	HWND const control{ (HWND)GetDlgItem(hwnd, item) };
+    int const index{ ::SendMessage(control, CB_GETCURSEL, 0, 0) };
+    if (index == CB_ERR)
+    {
+        return 0;
+    }
+	return index;
+}
+
 // store the position/width of elements as they come from resource.
 RECT windowStartScreenSize;
 RECT windowStartClientSize;
@@ -156,6 +171,8 @@ void storeLayout(HWND hwnd) {
 	storeControl(hwnd, IDC_TXT_DISPLAYNAME);
 	storeControl(hwnd, IDC_LBL_PROTOCOL);
 	storeControl(hwnd, IDC_TXT_PROTOCOL);
+	storeControl(hwnd, IDC_LBL_TYPE);
+	storeControl(hwnd, IDC_CMB_TYPE);
 	storeControl(hwnd, IDC_LBL_HOSTNAME);
 	storeControl(hwnd, IDC_TXT_HOSTNAME);
 	storeControl(hwnd, IDC_LBL_PORT);
@@ -211,6 +228,8 @@ void resizeControls(int clientWidth, int clientHeight) {
 	moveControl(IDC_TXT_DISPLAYNAME, deltaX, 0);
 	moveControl(IDC_LBL_PROTOCOL, deltaX, 0);
 	moveControl(IDC_TXT_PROTOCOL, deltaX, 0);
+	moveControl(IDC_LBL_TYPE, deltaX, 0);
+	moveControl(IDC_CMB_TYPE, deltaX, 0);
 	moveControl(IDC_LBL_HOSTNAME, deltaX, 0);
 	moveControl(IDC_TXT_HOSTNAME, deltaX, 0);
 	moveControl(IDC_LBL_PORT, deltaX, 0);
@@ -298,6 +317,9 @@ bool SaveIdentity(HWND windowHandle, int index, bool changed) {
 	ident.user = readDialogItemWStr(windowHandle, IDC_TXT_USERNAME);
 	ident.port = readDialogItemNumber(windowHandle, IDC_TXT_PORT);
 
+	int32_t key_type_id = readDialogComboIndex(windowHandle, IDC_CMB_TYPE);
+	ident.keyType = app->GetKeyTypeByIndex(key_type_id);
+
 	return app->SaveIdentity(ident);
 }
 
@@ -333,6 +355,8 @@ void CopyPubkeyToClipboard(HWND listHandle) {
 BOOL CALLBACK ManageIdentProc(HWND hwnd, UINT Message, WPARAM wParam,
 	LPARAM lParam) {
 	HWND m_hListBox = GetDlgItem(hwnd, IDC_LST_IDENT);
+	HWND m_hComboBox = GetDlgItem(hwnd, IDC_CMB_TYPE);
+	Application* app = Window::GetPtr()->GetApplication();
 
 	switch (Message) {
 	case WM_INITDIALOG:
@@ -350,6 +374,22 @@ BOOL CALLBACK ManageIdentProc(HWND hwnd, UINT Message, WPARAM wParam,
 		if (hIcon) {
 			SendMessage(hwnd, WM_SETICON, ICON_SMALL, (LPARAM)hIcon);
 		}
+
+		// Set Combobox
+		TCHAR A[16]; 
+		memset(&A,0,sizeof(A));    
+		for(size_t i = 0; i < app->GetNumKeyTypes(); ++i) {
+			KeyType type = app->GetKeyTypeByIndex(i);
+
+			std::wstring wstrName = std::wstring(type.GetName().begin(), type.GetName().end());   
+			wcscpy_s(A, sizeof(A)/sizeof(TCHAR), wstrName.c_str());
+
+			// Add string to combobox.
+			SendMessage(m_hComboBox, (UINT)CB_ADDSTRING,(WPARAM) 0,(LPARAM) A);
+		}
+		// select item:
+		size_t index = -1;
+		SendMessage(m_hComboBox, CB_SETCURSEL, (WPARAM)index, (LPARAM)0);
 
 		// Set Listbox to have Fullrow Select
 		SendMessage(m_hListBox, LVM_SETEXTENDEDLISTVIEWSTYLE,
@@ -381,7 +421,6 @@ BOOL CALLBACK ManageIdentProc(HWND hwnd, UINT Message, WPARAM wParam,
 
 		// This is where we set up the dialog box, and initialise any default
 		// values
-		Application* app = Window::GetPtr()->GetApplication();
 		for (uint32_t i = 0; i < app->GetNumIdentities(); ++i) {
 			LVITEM lvI;
 			lvI.pszText = LPSTR_TEXTCALLBACK;  // Sends an LVN_GETDISPINFO message.
@@ -419,9 +458,8 @@ BOOL CALLBACK ManageIdentProc(HWND hwnd, UINT Message, WPARAM wParam,
 			}
 			else if (plvdi->item.iSubItem == 1) {
 				if (!ident.pubkey_cached.Empty()) {
-					std::string pubStr =
-						app->GetPubKeyStrFor(ident.pubkey_cached, ident);
-					std::wstring pubWStr = std::wstring(pubStr.begin(), pubStr.end());
+					std::string pubStr = app->GetPubKeyStrFor(ident.pubkey_cached, ident);
+					std::wstring pubWStr = stringUtil::s2ws(pubStr);
 					HRESULT hr = StringCchCopy(plvdi->item.pszText,
 						pubWStr.size() * sizeof(WCHAR),
 						(LPWSTR)pubWStr.c_str());
@@ -453,6 +491,14 @@ BOOL CALLBACK ManageIdentProc(HWND hwnd, UINT Message, WPARAM wParam,
 				SetDlgItemInt(hwnd, IDC_TXT_PORT, 22, FALSE);
 			}
 			SetDlgItemText(hwnd, IDC_TXT_USERNAME, ident.user.c_str());
+
+			// Key-Type:
+			int cmb_idx = Window::GetPtr()->GetApplication()->GetKeyTypeIndexByName(ident.keyType.GetName());
+			if (cmb_idx == -1) {
+				cmb_idx = 0;
+			}
+			HWND cmb_hwnd = GetDlgItem(hwnd, IDC_CMB_TYPE);
+			SendMessage(cmb_hwnd, CB_SETCURSEL, cmb_idx, 0);
 		}
 		break;
 	}

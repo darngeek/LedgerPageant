@@ -4,6 +4,7 @@
 #include <string>
 #include <tchar.h>
 #include "logger.h"
+#include "stringUtil.h"
 
 #define MAX_KEY_LENGTH 255
 #define MAX_VALUE_NAME 16383
@@ -50,12 +51,23 @@ public:
 				if (retCode == ERROR_SUCCESS) {
 					Identity ident;
 					ident.name = achKey;
+
+					// only load ssh entries
+					ident.protocol = getValueWStringFor(hKey, achKey, _T("Protocol"));
+					if (_wcsicmp(ident.protocol.c_str(), _T("ssh")) != 0) {
+						continue;
+					}
+					
 					ident.user = getValueWStringFor(hKey, achKey, _T("UserName"));
 					ident.host = getValueWStringFor(hKey, achKey, _T("HostName"));
-					ident.protocol = getValueWStringFor(hKey, achKey, _T("Protocol"));
 					ident.port = getValueDwordFor(hKey, achKey, _T("PortNumber"));
 
 					_tcscpy_s(ident.regKeyName, 255, achKey);
+
+					const std::wstring keyName = getValueWStringFor(hKey, achKey, _T("KeyType")); // HostKey
+					if(!keyName.empty()) {
+						ident.InitKeyType(stringUtil::ws2s(keyName));
+					}
 
 					idents.push_back(ident);
 				}
@@ -65,7 +77,7 @@ public:
 		return idents;
 	}
 
-	std::wstring getValueWStringFor(HKEY hKey, TCHAR* achKey, const std::wstring& value) {
+	std::wstring getValueWStringFor(HKEY hKey, TCHAR* achKey, const std::wstring value) {
 		TCHAR retValue[MAX_VALUE_NAME];
 		DWORD retLength = MAX_VALUE_NAME;
 
@@ -79,7 +91,7 @@ public:
 		return std::wstring();
 	}
 
-	int getValueDwordFor(HKEY hKey, TCHAR* achKey, const std::wstring& value) {
+	int getValueDwordFor(HKEY hKey, TCHAR* achKey, const std::wstring value) {
 		DWORD retValue;
 
 		LONG retCode = ::RegGetValue(hKey, achKey, value.c_str(), RRF_RT_DWORD, nullptr, &retValue, NULL);
@@ -94,11 +106,11 @@ public:
 		const std::wstring& subKey = _T("Software\\SimonTatham\\PuTTy\\Sessions\\");
 
 		std::vector<Identity> sessions;
-		HKEY hTestKey;
-		if (RegOpenKeyEx(HKEY_CURRENT_USER, subKey.c_str(), 0, KEY_READ, &hTestKey) == ERROR_SUCCESS) {
-			sessions = ReadIdentities(hTestKey);
+		HKEY regKeyHandle;
+		if (RegOpenKeyEx(HKEY_CURRENT_USER, subKey.c_str(), 0, KEY_READ, &regKeyHandle) == ERROR_SUCCESS) {
+			sessions = ReadIdentities(regKeyHandle);
 		}
-		RegCloseKey(hTestKey);
+		RegCloseKey(regKeyHandle);
 
 		return sessions;
 	}
@@ -199,7 +211,7 @@ public:
 
 		LONG openRes = RegCreateKeyEx(HKEY_CURRENT_USER, subkeyStr.c_str(), 0, NULL, REG_OPTION_NON_VOLATILE, KEY_WRITE, NULL, &hKey, NULL);
 		if (openRes == ERROR_SUCCESS) {
-			std::string identName(ident.name.begin(), ident.name.end());
+			std::string identName;// = stringUtil::ws2s(ident.name);
 			LOG_DBG("Loaded key for %s", identName.c_str());
 		}
 		else if (openRes == ERROR_ACCESS_DENIED) {
@@ -215,6 +227,10 @@ public:
 		SetDwordValueForKey(hKey, TEXT("PortNumber"), (DWORD)ident.port);
 		SetStringValueForKey(hKey, TEXT("UserName"), ident.user.c_str());
 		SetStringValueForKey(hKey, TEXT("Protocol"), ident.protocol.c_str());
+
+		const std::string keyTypeName = ident.keyType.GetName();
+		const std::wstring keyTypeWstr = std::wstring(keyTypeName.begin(), keyTypeName.end());
+		SetStringValueForKey(hKey, TEXT("KeyType"), keyTypeWstr.c_str());
 
 		RegCloseKey(hKey);
 

@@ -54,7 +54,11 @@ public:
 		return 8;
 	}
 
-	uint32_t PushBack(uint8_t* bytes, uint32_t bytesSize) {
+	uint32_t PushBack(uint8_t* bytes, uint32_t bytesSize = -1) {
+		if (bytesSize == -1) {
+			return 0;
+		}
+
 		const uint32_t oldEnd = mData.size();
 		mData.resize(oldEnd + bytesSize);
 		memcpy(&(mData.data()[oldEnd]), bytes, bytesSize);
@@ -124,7 +128,6 @@ public:
 	
 	std::string AsString() const {
 		std::string str(mData.begin(), mData.end());
-
 		return str;
 	}
 

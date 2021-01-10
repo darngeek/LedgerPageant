@@ -2,6 +2,7 @@
 
 #include "logger.h"
 #include "encodeUtil.h"
+#include "stringUtil.h"
 
 // dongle response
 constexpr uint16_t CODE_SUCCESS = 0x9000;
@@ -9,12 +10,8 @@ constexpr uint16_t CODE_USER_REJECTED = 0x6985;
 constexpr uint16_t CODE_INVALID_PARAM = 0x6b01;
 constexpr uint16_t CODE_NO_STATUS_RESULT = CODE_SUCCESS + 1;
 
-// nist256
-constexpr uint8_t SSH_NIST256_DER_OCTET = 0x04;
-const std::string SSH_NIST256_KEY_PREFIX = "ecdsa-sha2-";
-const std::string SSH_NIST256_CURVE_NAME = "nistp256";
-const std::string SSH_NIST256_KEY_TYPE = SSH_NIST256_KEY_PREFIX + SSH_NIST256_CURVE_NAME;
 
+constexpr uint32_t readOffset = 1;
 constexpr size_t headerSize = 5;
 constexpr size_t headerExtra = 2;
 constexpr size_t maxDataSize = packet_size - (headerSize + headerExtra);
@@ -30,11 +27,15 @@ constexpr size_t maxDataSize = packet_size - (headerSize + headerExtra);
 Application::Application()
 	: mIsDeviceConnected(false)
 	, mDevice() {
-	LoadIdentities();
 }
 
 Application::~Application() {
 
+}
+
+void Application::Init() {
+	InitKeyTypes();
+	LoadIdentities();
 }
 
 bool Application::TryOpenDevice() {
@@ -215,8 +216,6 @@ ByteArray Application::Exchange(const APDU& apdu, uint16_t* statusCode) {
 
 	uint32_t offset = 0;
 	while (offset != apdu_data.Size()) {
-		//data = tmp[offset:offset + 64];
-		//data = bytearray([0]) + data;
 		ByteArray data;
 		data.PushBack((uint8_t)0);
 		for (uint32_t i = 0; i < 64; ++i) {
@@ -308,9 +307,34 @@ bool Application::SaveIdentity(Identity& identity) {
 
 	mRegistry.createSession(identity);
 
-	std::string identName(identity.name.begin(), identity.name.end());
+	std::string identName = stringUtil::ws2s(identity.name);
 	LOG_DBG("Saved identity: %s", identName.c_str());
 	return true;
+}
+
+void Application::InitKeyTypes() {
+	mKeyTypes.push_back(KeyType("nistp256", "ecdsa-sha2-", 0x04, 0x01));
+	mKeyTypes.push_back(KeyType("ed25519", "ssh-", 0x04, 0x02));
+}
+
+size_t Application::GetNumKeyTypes() {
+	return mKeyTypes.size();
+}
+
+KeyType Application::GetKeyTypeByIndex(size_t index) {
+	return mKeyTypes[index];
+}
+
+size_t Application::GetKeyTypeIndexByName(const std::string& name) {
+	for(size_t i = 0; i < GetNumKeyTypes(); ++i) {
+		KeyType kt = GetKeyTypeByIndex(i);
+		auto v = kt.GetName();
+		if(v == name) {
+			return i;
+		}
+	}
+
+	return -1;
 }
 
 uint32_t Application::GetNumLoadedKeys() {
@@ -324,6 +348,39 @@ uint32_t Application::GetNumLoadedKeys() {
 	return numKeys;
 }
 
+ByteArray Application::ConvertPubKey(const std::string& CurveName, ByteArray& response) {
+	assert(response.Size() == 66);
+
+	if(CurveName == "nistp256") {
+		ByteArray key;
+		// NIST256P1 compression: 0x03
+		if ((response[65] & 1) != 0) {
+			key.PushBack((uint8_t)0x03);
+		}
+		else {
+			key.PushBack((uint8_t)0x02);
+		}
+
+		// copy 32 response bytes
+		for (uint32_t idx = 2; idx < 34; ++idx) {
+			key.PushBack(response[idx]);
+		}
+		return key;
+	}
+	else if (CurveName == "ed25519") {
+		ByteArray key;
+		for(uint32_t idx = response.Size()-1; idx > 33; --idx) {
+			key.PushBack(response[idx]);
+		}
+		if ((response[33] & 1) != 0) {
+			key[31] |= 0x80;
+		}
+		return key;
+	}
+
+	return {};
+}
+
 ByteArray Application::GetPubKeyFor(const Identity& identity) {
 	if (!TryOpenDevice()) {
 		return {};
@@ -332,7 +389,7 @@ ByteArray Application::GetPubKeyFor(const Identity& identity) {
 	ByteArray path = identity.GetPathBIP32();
 
 	// APDU for public key ssh
-	APDU dataApdu(0x80, 0x02, 0x00, 0x01, path);
+	APDU dataApdu(0x80, 0x02, 0x00, identity.keyType.GetP2(), path);
 
 	uint16_t status = CODE_SUCCESS;
 	ByteArray response = Exchange(dataApdu, &status);
@@ -361,41 +418,63 @@ ByteArray Application::GetPubKeyFor(const Identity& identity) {
 		return ByteArray();
 	}
 
-	ByteArray blob;
 
-	// if (SSH_NIST256_CURVE_NAME)
-	const uint32_t readOffset = 1;
-	if ((response[64 + readOffset] & 1) != 0) {
-		// indicate compression with 0x03
-		blob.PushBack((uint8_t)0x03);
+	KeyType identKeyType = identity.keyType;
+	const std::string identKeyNameStr = identKeyType.GetName();
+	const std::string identKeyTypeStr = identKeyType.GetKeyType();
+
+	ByteArray key = ConvertPubKey(identKeyType.GetName(), response);
+
+	ByteArray pubkeyDecompressed;
+	if (identKeyType.GetName() == "nistp256") {
+		ByteArray keyinfo;
+		// key header
+		keyinfo.PushBack((uint32_t)identKeyTypeStr.length());
+		keyinfo.PushBack((uint8_t*)identKeyTypeStr.data(), identKeyTypeStr.length());
+
+		/// curve name
+		keyinfo.PushBack((uint32_t)identKeyNameStr.length());
+		keyinfo.PushBack((uint8_t*)identKeyNameStr.data(), identKeyNameStr.length());
+
+		pubkeyDecompressed = encodeUtils::decompressPubKey(key);
+
+		keyinfo.PushBack((uint32_t)pubkeyDecompressed.Size() + 1);
+		keyinfo.PushBack((uint8_t)identKeyType.GetOctet());
+		keyinfo.PushBack(pubkeyDecompressed);
+		return keyinfo;
+	}
+	else if (identKeyType.GetName() == "ed25519") {
+		pubkeyDecompressed = encodeUtils::decompressPubKey_ed25519(key);
+	
+		// key header
+		ByteArray keyinfo;
+		keyinfo.PushBack((uint32_t)strlen("ssh-ed25519"));
+		keyinfo.PushBack((uint8_t*)identKeyTypeStr.data(), identKeyTypeStr.length());
+
+		keyinfo.PushBack((uint32_t)pubkeyDecompressed.Size());
+		//keyinfo.PushBack((uint8_t)identKeyType.GetOctet());
+		keyinfo.PushBack(pubkeyDecompressed);
+		return keyinfo;
 	}
 	else {
-		blob.PushBack((uint8_t)0x02);
+		return {};
 	}
-
-	// copy 32 response bytes
-	for (uint32_t idx = 1; idx < 33; ++idx) {
-		blob.PushBack(response[idx + readOffset]);
-	}
-
-	ByteArray keyinfo;
-	// SSH_NIST256_KEY_TYPE
-	keyinfo.PushBack(SSH_NIST256_KEY_TYPE.length());
-	keyinfo.PushBack((uint8_t*)SSH_NIST256_KEY_TYPE.data(), SSH_NIST256_KEY_TYPE.length());
-	// curve_name
-	keyinfo.PushBack(SSH_NIST256_CURVE_NAME.length());
-	keyinfo.PushBack((uint8_t*)SSH_NIST256_CURVE_NAME.data(), SSH_NIST256_CURVE_NAME.length());
-	// key_blob
-	ByteArray pubkeyDecompressed = encodeUtils::decompressPubKey(blob);
-	keyinfo.PushBack(pubkeyDecompressed.Size() + 1);
-	keyinfo.PushBack((uint8_t)SSH_NIST256_DER_OCTET);
-	keyinfo.PushBack(pubkeyDecompressed);
-
-	return keyinfo;
 }
 
 std::string Application::GetPubKeyStrFor(const ByteArray& keyBlob, const Identity& identity) {
-	return SSH_NIST256_KEY_TYPE + " " + encodeUtils::encodeBase64(keyBlob.AsString()) + " <" + identity.ToString() + ">";
+	// Key type
+	std::string ret = identity.keyType.GetKeyType() + " ";
+
+	// Blob
+	ret += encodeUtils::encodeBase64(keyBlob.AsString());
+	
+	// Label
+	ret += " <" + identity.ToString();
+	if (identity.keyType.GetName() == "ed25519") {
+		ret += "|ed25519";
+	}
+	ret += ">";
+	return ret;
 }
 
 MemoryMap& Application::GetOrCreateMap(const std::string& identifier) {
@@ -469,7 +548,7 @@ bool Application::HandleMemoryMap(MemoryMap& inMap) {
 			return false;
 		}
 
-		std::string identName(ident.name.begin(), ident.name.end());
+		std::string identName = stringUtil::ws2s(ident.name);
 		LOG_DBG("Identity %s was accepted", identName.c_str());
 
 		SignMap(inMap, ident);
@@ -536,7 +615,6 @@ void Application::SignMap(MemoryMap& inMap, Identity& ident) {
 	ByteArray challenge_blob;
 	challenge_blob.PushBack(challenge, challenge_size);
 
-	// >
 	uint32_t offset = 0;
 	ByteArray signature;
 	uint32_t chunk_size = 0;
@@ -577,38 +655,18 @@ void Application::SignMap(MemoryMap& inMap, Identity& ident) {
 	offset = 3;
 
 	uint32_t length = signature[offset];
-	// LOG_DBG("R Signature length: %d", length);
-
 	std::vector<uint8_t> r;
 	for (uint32_t i = offset + 1; i < offset + 1 + length; ++i) {
-		/*
-		// ledger-agent does this, but this breaks...
-
-		// Python
-			if r[0] == 0:
-				r = r[1:]
-		// C++
-			if (i == offset + 1) {
-				if (signature[i] == 0) {
-					LOG_DBG("skipstart");
-					//continue;
-				}
-			}
-		*/
-
 		r.push_back(signature[i]);
 	}
 
 	offset = offset + 1 + length + 1;
-
 	length = signature[offset];
-	// LOG_DBG("S Signature length: %d", length);
 
 	std::vector<uint8_t> s;
 	for (uint32_t i = offset + 1; i < offset + 1 + length; ++i) {
 		if (i == offset + 1) {
 			if (signature[i] == 0) {
-				// LOG_DBG("skipstart");
 				continue;
 			}
 		}
@@ -624,7 +682,7 @@ void Application::SignMap(MemoryMap& inMap, Identity& ident) {
 	encoded_signature_value.PushBack((uint8_t*)s.data(), s.size());
 
 	ByteArray encoded_signature;
-	const std::string keyType(SSH_NIST256_KEY_TYPE);
+	const std::string keyType = ident.keyType.GetKeyType();
 	encoded_signature.PushBack((uint32_t)keyType.length());
 	encoded_signature.PushBack((uint8_t*)keyType.c_str(), keyType.size());
 

@@ -1,6 +1,9 @@
 #include "identity.h"
 
+#include "window.h"
+#include "application.h"
 #include "encodeUtil.h"
+#include "stringUtil.h"
 #include "logger.h"
 
 Identity::Identity() {
@@ -16,10 +19,15 @@ Identity::~Identity() {
 
 }
 
+void Identity::InitKeyType(std::string keyTypeStr) {
+	Application* app = Window::GetPtr()->GetApplication();
+	keyType = app->GetKeyTypeByIndex(app->GetKeyTypeIndexByName(keyTypeStr));
+}
+
 bool Identity::FromString(std::string identStr) {
 	std::wregex identity_regex(L"^(?:(\\w+)://)?(?:(.*?)@)?([^:/]*)(?::(\\d+))?(?:/(.*))?$");
 	std::wsmatch base_match;
-	std::wstring identWstr = std::wstring(identStr.begin(), identStr.end());
+	std::wstring identWstr = stringUtil::s2ws(identStr);
 
 	std::regex_match(identWstr, base_match, identity_regex);
 
@@ -53,15 +61,20 @@ std::string Identity::ToString() const {
 
 	result += host;
 
-	if (port != 0) {
+	if (port > 0) {
 		result += L":" + port;
-	}
+	}/* else {
+		if (protocol.empty() || protocol == L"ssh") {
+			// default :22 assumed when no protocol or ssh
+			result += L":22";
+		}
+	}*/
 
 	if (!path.empty()) {
 		result += L"/" + path;
 	}
 
-	return std::string(result.begin(), result.end());
+	return stringUtil::ws2s(result);
 }
 
 ByteArray Identity::GetAddress(bool ecdh) const {

@@ -7,6 +7,10 @@
 #include <cryptopp/osrng.h>
 #include <cryptopp/base64.h>
 
+#include <cryptopp/xed25519.h>
+//#include <cryptopp/donna.h>
+#include <assert.h>
+
 namespace encodeUtils {
 	static std::string makeSha256(std::string msg) {
 		std::string digest;
@@ -39,11 +43,9 @@ namespace encodeUtils {
 
 	static ByteArray decompressPubKey(const ByteArray& inCompressedKey) {
 		/*
-			eventho romain is using NIST256p1
 			https://tools.ietf.org/search/rfc4492 indicates we can use:
 			secp256r1   |  prime256v1   |   NIST P-256
 		*/
-
 		CryptoPP::ECDSA<CryptoPP::ECP, CryptoPP::SHA256>::PublicKey _pubKey;
 		_pubKey.AccessGroupParameters().Initialize(CryptoPP::ASN1::secp256r1());
 
@@ -65,5 +67,12 @@ namespace encodeUtils {
 		}
 
 		return pointMash;
+	}
+
+	static ByteArray& decompressPubKey_ed25519(ByteArray& inCompressedKey) {
+		// https://datatracker.ietf.org/doc/html/rfc8032#section-5.1.5
+		// https://cryptopp.com/wiki/Ed25519
+		assert(inCompressedKey.Size() == 32);
+		return inCompressedKey;
 	}
 }

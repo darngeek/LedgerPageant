@@ -2,6 +2,7 @@
 
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine, int nCmdShow) {
 	Window* window = Window::GetPtr();
+	window->Init();
 
 	HWND win = window->Make(hInstance);
 	if (win) {

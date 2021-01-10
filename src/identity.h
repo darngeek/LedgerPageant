@@ -2,6 +2,7 @@
 
 #include <regex>
 #include <iostream>
+#include "key_type.h"
 #include "bytearray.h"
 #include <tchar.h>
 
@@ -17,6 +18,7 @@ public:
 	explicit Identity(const std::string& identStr);
 	~Identity();
 
+	void InitKeyType(std::string keyType);
 	bool FromString(std::string identStr);
 	std::string ToString() const;
 
@@ -31,6 +33,7 @@ public:
 	int port;
 
 	TCHAR regKeyName[255] = {0};
+	KeyType keyType;
 	ByteArray pubkey_cached;
 
 private:

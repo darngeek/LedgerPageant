@@ -110,6 +110,8 @@ BEGIN
     EDITTEXT        IDC_TXT_USERNAME,186,153,174,14,ES_AUTOHSCROLL
     PUSHBUTTON      "Save",IDC_BTN_SAVE,306,174,50,14
     PUSHBUTTON      "Close",IDC_BTN_CLOSE,320,248,48,14
+    LTEXT           "Type",IDC_LBL_TYPE,282,78,24,10
+    COMBOBOX        IDC_CMB_TYPE,282,90,78,120,CBS_DROPDOWN | WS_VSCROLL | WS_TABSTOP
 END
 
 
@@ -157,6 +159,8 @@ BEGIN
     0, 0, 0, 0,
     0, 0, 0, 0,
     0, 0, 0, 0,
+    0, 0, 0, 0,
+    0, 0, 0, 0,
     0, 0, 0, 0
 END
 
@@ -170,8 +174,8 @@ STRINGTABLE
 BEGIN
     IDS_APP_TITLE           "Pageant"
     IDS_MNGIDENT_TITLE      "Manage Identities"
-	IDS_LST_COL_NAME		"Name"
-	IDS_LST_COL_PUBKEY		"Public Key"
+    IDS_LST_COL_NAME        "Name"
+    IDS_LST_COL_PUBKEY      "Public Key"
 END
 
 #endif    // English (United States) resources
