@@ -181,9 +181,13 @@ public:
 	}
 
 	bool removeSession(Identity ident) {
-		std::wstring subkeyStr(_T("Software\\SimonTatham\\PuTTy\\Sessions\\"));
-		subkeyStr += ident.regKeyName;
-		return RemoveKeyRecursive(subkeyStr);
+		if (_tcslen(ident.regKeyName) != 0) {
+			std::wstring subkeyStr(_T("Software\\SimonTatham\\PuTTy\\Sessions\\"));
+			subkeyStr += ident.regKeyName;
+			return RemoveKeyRecursive(subkeyStr);
+		}
+
+		return true;
 	}
 
 	bool SetStringValueForKey(HKEY& hKey, LPCTSTR value, LPCTSTR data) {
