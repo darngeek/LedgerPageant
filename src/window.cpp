@@ -127,6 +127,7 @@ RECT windowStartScreenSize;
 RECT windowStartClientSize;
 std::map<int, RECT> controlRects;
 std::map<int, HWND> controlHandles;
+HWND lastHandle = nullptr;
 void storeControl(HWND hwnd, int control) {
 	HWND windowHandle = hwnd;
 
@@ -193,8 +194,7 @@ void updateControl(int control, int x, int y, int width, int height) {
 
 	// SetWindowPos in client coordinates
 	constexpr int flags = 0;
-	SetWindowPos(controlHandles[control], HWND_TOP, controlPosition.x,
-		controlPosition.y, controlSize.x, controlSize.y, flags);
+	SetWindowPos(controlHandles[control], HWND_BOTTOM, controlPosition.x, controlPosition.y, controlSize.x, controlSize.y, flags);
 }
 
 void scaleControl(int control, int width, int height) {
